@@ -7,28 +7,71 @@
     <title>Gemini C.L.I.</title>
     <script>
       // --- SYSTEM CRASH HANDLER ---
-      // Catches global errors (like "process is not defined" or syntax errors)
-      // and displays them on screen instead of showing a black void.
+      
+      // 1. Global Logic Errors (Syntax, Runtime)
       window.onerror = function(message, source, lineno, colno, error) {
-        document.body.innerHTML = `
-          <div style="background-color: #000; color: #10b981; font-family: 'Courier New', monospace; padding: 2rem; height: 100vh; overflow: auto;">
-            <h1 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid #ef4444; padding-bottom: 0.5rem;">// CRITICAL SYSTEM FAILURE //</h1>
-            <p style="margin-bottom: 1rem;">> ERROR_DETECTED: <span style="color: #fff;">${message}</span></p>
-            <p style="margin-bottom: 1rem;">> SOURCE_FILE: <span style="color: #a7f3d0;">${source}:${lineno}</span></p>
-            <p style="opacity: 0.7; margin-top: 2rem;">> ATTEMPTING RECOVERY... FAILED.</p>
-            <p style="opacity: 0.7;">> PLEASE CHECK CONSOLE FOR STACK TRACE.</p>
+        showBSOD(message, source + ':' + lineno);
+      };
+
+      // 2. Resource Loading Errors (404s on Scripts/CSS) - CRITICAL for GitHub Pages
+      // Must use capture phase (third argument = true)
+      window.addEventListener('error', function(event) {
+        if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+            // IGNORE FAVICON ERRORS - A missing icon shouldn't crash the app
+            if (event.target.rel && (event.target.rel.includes('icon') || event.target.rel.includes('shortcut'))) return;
+
+            const url = event.target.src || event.target.href;
+            showBSOD('Resource Failed to Load (404)', url);
+        }
+      }, true);
+
+      function showBSOD(errorMsg, source) {
+        // Prevent multiple screens
+        if (document.getElementById('bsod-screen')) return;
+
+        const bsodContent = `
+          <div style="background-color: #000; color: #10b981; font-family: 'Courier New', monospace; padding: 2rem; height: 100%; overflow: auto; box-sizing: border-box;">
+            <h1 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid #ef4444; padding-bottom: 0.5rem;">// SYSTEM BOOT FAILURE //</h1>
+            <p style="margin-bottom: 1rem;">> ERROR_CODE: <span style="color: #fff;">LOAD_ABORTED</span></p>
+            <p style="margin-bottom: 1rem;">> DETAILS: <span style="color: #a7f3d0;">${errorMsg}</span></p>
+            <p style="margin-bottom: 1rem;">> SOURCE: <span style="color: #fbbf24;">${source || 'Unknown'}</span></p>
+            
+            <button onclick="document.getElementById('bsod-screen').remove()" style="margin-top: 1rem; border: 1px solid #ef4444; background: transparent; color: #ef4444; padding: 0.5rem 1rem; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; text-transform: uppercase; transition: all 0.2s;">
+              [ X DISMISS ERROR AND CONTINUE ]
+            </button>
+
+            <div style="margin-top: 2rem; border: 1px dashed #065f46; padding: 1rem;">
+                <p style="opacity: 0.8;">> TROUBLESHOOTING:</p>
+                <ul style="list-style: none; padding-left: 1rem; margin-top: 0.5rem; opacity: 0.7;">
+                    <li>1. If 'Resource Failed', check vite.config.ts has base: './'</li>
+                    <li>2. Check if API Key is valid in index.html</li>
+                    <li>3. Disable AdBlockers (may block scripts)</li>
+                </ul>
+            </div>
           </div>
         `;
-      };
+
+        // NON-DESTRUCTIVE OVERLAY
+        // Instead of wiping body (which kills #root), we append an overlay
+        if (document.body) {
+            const overlay = document.createElement('div');
+            overlay.id = 'bsod-screen';
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: black;';
+            overlay.innerHTML = bsodContent;
+            document.body.appendChild(overlay);
+        } else {
+            // Fallback if body doesn't exist yet (very early error)
+            document.write(bsodContent);
+        }
+      }
 
       // --- ENVIRONMENT SHIM ---
       // Emulates Node.js process.env for browser environments (GitHub Pages, etc.)
       window.process = {
         env: {
           NODE_ENV: 'production',
-          // TODO: PASTE YOUR API KEY AND URL INSIDE THE QUOTES BELOW
-          // NOTE: Using a proxy URL with @google/genai requires the proxy to support Google's REST format.
-          API_KEY: '', 
+          // PRE-FILLED CREDENTIALS
+          API_KEY: 'hk-jjgtjh1000015468211af701640e2afc1e374d7b8e511942', 
           API_BASE_URL: 'https://api.openai-hk.com' 
         }
       };
@@ -40,7 +83,9 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2"
   }
 }
 </script>
@@ -93,6 +138,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
