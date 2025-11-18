@@ -203,11 +203,12 @@ const App: React.FC = () => {
     };
   }, []); 
 
+  // Get the content of the last message to trigger scrolling on character updates
   const lastMessageContent = messages.length > 0 ? messages[messages.length - 1].content : null;
   
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
-  }, [messages.length]); // Optimized scroll dependency
+  }, [messages.length, lastMessageContent]); // Scroll when length changes OR content changes (typewriter effect)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,7 +226,7 @@ const App: React.FC = () => {
 
     try {
       const stream = await sendMessageStream(input);
-      let text = '';
+      let fullText = '';
       const modelMessageId = nextId.current++;
       const modelMessage: ChatMessage = {
           id: modelMessageId,
@@ -236,14 +237,20 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, modelMessage]);
 
       for await (const chunk of stream) {
-        text += chunk.text;
-         setMessages(prev => prev.map(msg => 
-            msg.id === modelMessageId ? { ...msg, content: text + '▋' } : msg
-        ));
+        const chunkText = chunk.text;
+        // Simulate typewriter effect by splitting chunk into characters
+        for (const char of chunkText) {
+            fullText += char;
+            setMessages(prev => prev.map(msg => 
+                msg.id === modelMessageId ? { ...msg, content: fullText + '▋' } : msg
+            ));
+            // Small delay to simulate baud rate (faster than boot, but still retro)
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
       }
       
       setMessages(prev => prev.map(msg =>
-        msg.id === modelMessageId ? { ...msg, content: text } : msg
+        msg.id === modelMessageId ? { ...msg, content: fullText } : msg
       ));
 
     } catch (error) {
@@ -260,6 +267,12 @@ const App: React.FC = () => {
     }
   };
 
+  // Determine button style based on input state
+  const hasInput = input.trim().length > 0;
+  const buttonClass = hasInput
+    ? "w-full mt-2 p-2 text-xl font-bold rounded-sm bg-emerald-600 text-black border-2 border-emerald-600 cursor-pointer transition-colors"
+    : "w-full mt-2 p-2 text-xl font-bold bg-transparent text-emerald-700/50 rounded-sm border-2 border-emerald-800/50 cursor-not-allowed transition-colors";
+
   return (
     <div className="w-full h-screen bg-zinc-900 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
         {/* Outer Bezel */}
@@ -269,14 +282,16 @@ const App: React.FC = () => {
                 {/* The Screen element */}
                 <div className="w-[94vw] h-[88vh] max-w-[1600px] bg-black text-amber-400 font-mono flex flex-col antialiased relative rounded-[2.2rem] border-4 border-zinc-800 shadow-[0_0_6rem_rgba(251,191,36,0.15),_inset_0_0_2rem_rgba(0,0,0,0.8)] overflow-hidden">
                 <CRTEffects />
-                <Header />
-                <main className="flex-1 flex flex-col p-2 md:p-4 overflow-y-auto">
-                    <div className="flex-1 space-y-4">
+                
+                <main className="flex-1 flex flex-col overflow-y-auto">
+                    {/* Header moved inside main to scroll with content */}
+                    <Header />
+                    <div className="flex-1 space-y-4 p-2 md:p-4">
                         {messages.map((msg) => (
                         <div key={msg.id}>
                             {msg.role === MessageRole.USER && (
-                                <pre className="whitespace-pre-wrap text-lg md:text-xl text-green-400">
-                                    <span className="text-cyan-400">OPERATOR:/~> </span>{msg.content}
+                                <pre className="whitespace-pre-wrap text-lg md:text-xl text-emerald-500 drop-shadow-[0_0_3px_rgba(16,185,129,0.5)]">
+                                    <span className="text-emerald-700">OPERATOR:/~> </span>{msg.content}
                                 </pre>
                             )}
                             {msg.role === MessageRole.MODEL && (
@@ -297,8 +312,9 @@ const App: React.FC = () => {
                 {!isBooting && (
                     <footer className="p-2 md:p-4 flex-shrink-0">
                         <form onSubmit={handleSubmit}>
-                            <div className="flex items-center gap-2 border-2 border-cyan-400/80 p-2 bg-black/30 rounded-sm">
-                                <label htmlFor="userInput" className="text-cyan-400 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~> </label>
+                            {/* Input Container: Ink Green (Emerald) Border */}
+                            <div className="flex items-center gap-2 border-2 border-emerald-700 p-2 bg-black/30 rounded-sm">
+                                <label htmlFor="userInput" className="text-emerald-700 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~> </label>
                                 <input
                                 id="userInput"
                                 type="text"
@@ -306,14 +322,15 @@ const App: React.FC = () => {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={isLoading ? "等待响应..." : "Enter directive..."}
                                 disabled={isLoading}
-                                className="flex-1 bg-transparent border-0 focus:ring-0 text-amber-400 placeholder-amber-600/70 caret-amber-400 text-lg md:text-xl"
+                                // Input Text: Ink Green (Emerald-500)
+                                className="flex-1 bg-transparent border-0 focus:ring-0 text-emerald-500 placeholder-emerald-800/50 caret-emerald-500 text-lg md:text-xl"
                                 autoFocus
                                 />
                             </div>
                              <button
                                 type="submit"
-                                disabled={isLoading || !input.trim()}
-                                className="w-full mt-2 p-2 text-xl font-bold bg-transparent text-green-400 rounded-sm border-2 border-green-400/80 hover:bg-green-400 hover:text-black disabled:bg-zinc-800 disabled:text-zinc-600 disabled:border-zinc-700 disabled:cursor-not-allowed transition-colors"
+                                disabled={isLoading || !hasInput}
+                                className={buttonClass}
                             >
                                 传输 | TRANSMIT
                             </button>
