@@ -1,0 +1,5 @@
+{
+  "name": "Gemini DOS Steampunk Chat",
+  "description": "A retro DOS-style, steampunk-themed chat interface to interact with the Gemini AI. Features a terminal aesthetic with glowing text, scanlines, and ASCII art.",
+  "requestFramePermissions": []
+}
