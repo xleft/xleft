@@ -8,13 +8,19 @@ const getChatSession = () => {
     // Robust check for API KEY that works in browser (via window.process shim) and build envs
     // @ts-ignore - process might be missing in some strict browser contexts without shim
     const apiKey = process?.env?.API_KEY;
+    // @ts-ignore
+    const baseUrl = process?.env?.API_BASE_URL;
 
     if (!apiKey) {
         console.error("API_KEY is missing. Please ensure it is set in your environment variables or .env file.");
         throw new Error("API_KEY environment variable is not set. C.O.G.S. core functionality unavailable.");
     }
 
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    // Initialize GoogleGenAI with optional baseUrl for proxies
+    const ai = new GoogleGenAI({ 
+        apiKey: apiKey,
+        baseUrl: baseUrl // This allows using custom endpoints if provided
+    });
 
     chatSession = ai.chats.create({
         model: 'gemini-2.5-flash',

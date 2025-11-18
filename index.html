@@ -6,12 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gemini C.L.I.</title>
     <script>
-      // CRITICAL FIX FOR GITHUB PAGES / BROWSER ENVIRONMENTS
-      // Prevents "ReferenceError: process is not defined" which causes Black Screen
+      // --- SYSTEM CRASH HANDLER ---
+      // Catches global errors (like "process is not defined" or syntax errors)
+      // and displays them on screen instead of showing a black void.
+      window.onerror = function(message, source, lineno, colno, error) {
+        document.body.innerHTML = `
+          <div style="background-color: #000; color: #10b981; font-family: 'Courier New', monospace; padding: 2rem; height: 100vh; overflow: auto;">
+            <h1 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid #ef4444; padding-bottom: 0.5rem;">// CRITICAL SYSTEM FAILURE //</h1>
+            <p style="margin-bottom: 1rem;">> ERROR_DETECTED: <span style="color: #fff;">${message}</span></p>
+            <p style="margin-bottom: 1rem;">> SOURCE_FILE: <span style="color: #a7f3d0;">${source}:${lineno}</span></p>
+            <p style="opacity: 0.7; margin-top: 2rem;">> ATTEMPTING RECOVERY... FAILED.</p>
+            <p style="opacity: 0.7;">> PLEASE CHECK CONSOLE FOR STACK TRACE.</p>
+          </div>
+        `;
+      };
+
+      // --- ENVIRONMENT SHIM ---
+      // Emulates Node.js process.env for browser environments (GitHub Pages, etc.)
       window.process = {
         env: {
           NODE_ENV: 'production',
-          API_KEY: '' // This prevents crash, but user must set up env vars in build pipeline
+          // TODO: PASTE YOUR API KEY AND URL INSIDE THE QUOTES BELOW
+          // NOTE: Using a proxy URL with @google/genai requires the proxy to support Google's REST format.
+          API_KEY: '', 
+          API_BASE_URL: 'https://api.openai-hk.com' 
         }
       };
     </script>
@@ -31,6 +49,9 @@
     body {
         /* A subtle glow for all text to enhance the CRT feel */
         text-shadow: 0 0 5px rgba(251, 191, 36, 0.3), 0 0 5px rgba(16, 185, 129, 0.3);
+        background-color: #000;
+        margin: 0;
+        overflow: hidden; /* Prevent body scroll, app handles it */
     }
     /* Specific glow for green text to make it pop */
     .text-emerald-500, .text-emerald-600 {
@@ -51,7 +72,7 @@
         to { transform: translateX(-100%); }
     }
     .animate-marquee {
-        animation: marquee 60s linear infinite;
+        animation: marquee 30s linear infinite; /* Sped up slightly for better flow */
     }
     /* Custom scrollbar for the CRT vibe */
     main::-webkit-scrollbar {
@@ -61,16 +82,16 @@
         background: #000;
     }
     main::-webkit-scrollbar-thumb {
-        background-color: #78350f; /* amber-800 */
+        background-color: #064e3b; /* emerald-900 */
         border: 2px solid #000;
         border-radius: 2px;
     }
     main::-webkit-scrollbar-thumb:hover {
-        background-color: #b45309; /* amber-700 */
+        background-color: #065f46; /* emerald-800 */
     }
 </style>
 </head>
-  <body class="bg-black">
+  <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
