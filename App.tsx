@@ -74,7 +74,7 @@ const ScrollingTicker: React.FC = () => {
 };
 
 const Header: React.FC = () => (
-  <header className="text-center text-amber-400 font-mono relative overflow-hidden flex-shrink-0 flex flex-col w-full border-b-2 border-amber-900/40">
+  <header className="text-center text-amber-400 font-mono relative overflow-hidden flex-shrink-0 flex flex-col w-full border-b-2 border-amber-900/40 mb-4">
     <div className="w-full bg-black/20 py-4 relative">
         {/* Decorative side lines for coordination */}
         <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-amber-900/50 to-transparent opacity-50 hidden sm:block"></div>
@@ -208,7 +208,7 @@ const App: React.FC = () => {
   
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
-  }, [messages.length, lastMessageContent]); // Scroll when length changes OR content changes (typewriter effect)
+  }, [messages.length, lastMessageContent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +237,7 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, modelMessage]);
 
       for await (const chunk of stream) {
-        const chunkText = chunk.text;
+        const chunkText = chunk.text || '';
         // Simulate typewriter effect by splitting chunk into characters
         for (const char of chunkText) {
             fullText += char;
@@ -245,6 +245,7 @@ const App: React.FC = () => {
                 msg.id === modelMessageId ? { ...msg, content: fullText + '▋' } : msg
             ));
             // Small delay to simulate baud rate (faster than boot, but still retro)
+            // 10ms is fast but perceptible
             await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
@@ -255,10 +256,15 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error("Gemini API error:", error);
+      let errorMsg = "传输错误: 未能获取响应 | TRANSMISSION ERROR: Could not get a response.";
+      if (error instanceof Error && error.message.includes("API_KEY")) {
+          errorMsg = "认证失败: 缺少 API 密钥 | AUTH ERROR: API KEY MISSING. CHECK DEPLOYMENT CONFIG.";
+      }
+
       const errorMessage: ChatMessage = {
         id: nextId.current++,
         role: MessageRole.SYSTEM,
-        content: "传输错误: 未能获取响应 | TRANSMISSION ERROR: Could not get a response.",
+        content: errorMsg,
         timestamp: new Date().toLocaleTimeString(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -269,9 +275,10 @@ const App: React.FC = () => {
 
   // Determine button style based on input state
   const hasInput = input.trim().length > 0;
+  // Ink Green (Emerald-700/800 range) for darker look
   const buttonClass = hasInput
-    ? "w-full mt-2 p-2 text-xl font-bold rounded-sm bg-emerald-600 text-black border-2 border-emerald-600 cursor-pointer transition-colors"
-    : "w-full mt-2 p-2 text-xl font-bold bg-transparent text-emerald-700/50 rounded-sm border-2 border-emerald-800/50 cursor-not-allowed transition-colors";
+    ? "w-full mt-2 p-2 text-xl font-bold rounded-sm bg-emerald-700 text-black border-2 border-emerald-700 cursor-pointer transition-colors shadow-[0_0_10px_rgba(4,120,87,0.4)] hover:bg-emerald-600"
+    : "w-full mt-2 p-2 text-xl font-bold bg-transparent text-emerald-900 rounded-sm border-2 border-emerald-900 cursor-not-allowed transition-colors opacity-50";
 
   return (
     <div className="w-full h-screen bg-zinc-900 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
@@ -283,15 +290,15 @@ const App: React.FC = () => {
                 <div className="w-[94vw] h-[88vh] max-w-[1600px] bg-black text-amber-400 font-mono flex flex-col antialiased relative rounded-[2.2rem] border-4 border-zinc-800 shadow-[0_0_6rem_rgba(251,191,36,0.15),_inset_0_0_2rem_rgba(0,0,0,0.8)] overflow-hidden">
                 <CRTEffects />
                 
-                <main className="flex-1 flex flex-col overflow-y-auto">
+                <main className="flex-1 flex flex-col overflow-y-auto pb-2">
                     {/* Header moved inside main to scroll with content */}
                     <Header />
                     <div className="flex-1 space-y-4 p-2 md:p-4">
                         {messages.map((msg) => (
                         <div key={msg.id}>
                             {msg.role === MessageRole.USER && (
-                                <pre className="whitespace-pre-wrap text-lg md:text-xl text-emerald-500 drop-shadow-[0_0_3px_rgba(16,185,129,0.5)]">
-                                    <span className="text-emerald-700">OPERATOR:/~> </span>{msg.content}
+                                <pre className="whitespace-pre-wrap text-lg md:text-xl text-emerald-600 drop-shadow-[0_0_2px_rgba(5,150,105,0.5)]">
+                                    <span className="text-emerald-800">OPERATOR:/~> </span>{msg.content}
                                 </pre>
                             )}
                             {msg.role === MessageRole.MODEL && (
@@ -310,11 +317,11 @@ const App: React.FC = () => {
                     </div>
                 </main>
                 {!isBooting && (
-                    <footer className="p-2 md:p-4 flex-shrink-0">
+                    <footer className="p-2 md:p-4 flex-shrink-0 bg-black relative z-40">
                         <form onSubmit={handleSubmit}>
-                            {/* Input Container: Ink Green (Emerald) Border */}
-                            <div className="flex items-center gap-2 border-2 border-emerald-700 p-2 bg-black/30 rounded-sm">
-                                <label htmlFor="userInput" className="text-emerald-700 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~> </label>
+                            {/* Input Container: Ink Green (Emerald-800) Border, changed from 700 */}
+                            <div className={`flex items-center gap-2 border-2 ${hasInput ? 'border-emerald-700 shadow-[0_0_5px_rgba(4,120,87,0.3)]' : 'border-emerald-900'} p-2 bg-black/80 rounded-sm transition-all duration-300`}>
+                                <label htmlFor="userInput" className="text-emerald-800 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~> </label>
                                 <input
                                 id="userInput"
                                 type="text"
@@ -322,8 +329,8 @@ const App: React.FC = () => {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={isLoading ? "等待响应..." : "Enter directive..."}
                                 disabled={isLoading}
-                                // Input Text: Ink Green (Emerald-500)
-                                className="flex-1 bg-transparent border-0 focus:ring-0 text-emerald-500 placeholder-emerald-800/50 caret-emerald-500 text-lg md:text-xl"
+                                // Input Text: Ink Green (Emerald-600) to match request
+                                className="flex-1 bg-transparent border-0 focus:ring-0 text-emerald-600 placeholder-emerald-900/50 caret-emerald-500 text-lg md:text-xl"
                                 autoFocus
                                 />
                             </div>

@@ -5,11 +5,16 @@ let chatSession: Chat | null = null;
 const getChatSession = () => {
     if (chatSession) return chatSession;
 
-    if (!process.env.API_KEY) {
+    // Robust check for API KEY that works in browser (via window.process shim) and build envs
+    // @ts-ignore - process might be missing in some strict browser contexts without shim
+    const apiKey = process?.env?.API_KEY;
+
+    if (!apiKey) {
+        console.error("API_KEY is missing. Please ensure it is set in your environment variables or .env file.");
         throw new Error("API_KEY environment variable is not set. C.O.G.S. core functionality unavailable.");
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: apiKey });
 
     chatSession = ai.chats.create({
         model: 'gemini-2.5-flash',
@@ -32,6 +37,7 @@ const getChatSession = () => {
 };
 
 export const sendMessageStream = async (message: string) => {
+    // We initialize lazily to avoid crashing on load if key is missing
     const chat = getChatSession();
     return chat.sendMessageStream({ message });
 };
