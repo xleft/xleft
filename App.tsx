@@ -298,7 +298,7 @@ const App: React.FC = () => {
                         <div key={msg.id}>
                             {msg.role === MessageRole.USER && (
                                 <pre className="whitespace-pre-wrap text-lg md:text-xl text-emerald-600 drop-shadow-[0_0_2px_rgba(5,150,105,0.5)]">
-                                    <span className="text-emerald-800">OPERATOR:/~> </span>{msg.content}
+                                    <span className="text-emerald-800">OPERATOR:/~&gt; </span>{msg.content}
                                 </pre>
                             )}
                             {msg.role === MessageRole.MODEL && (
@@ -321,7 +321,7 @@ const App: React.FC = () => {
                         <form onSubmit={handleSubmit}>
                             {/* Input Container: Ink Green (Emerald-800) Border, changed from 700 */}
                             <div className={`flex items-center gap-2 border-2 ${hasInput ? 'border-emerald-700 shadow-[0_0_5px_rgba(4,120,87,0.3)]' : 'border-emerald-900'} p-2 bg-black/80 rounded-sm transition-all duration-300`}>
-                                <label htmlFor="userInput" className="text-emerald-800 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~> </label>
+                                <label htmlFor="userInput" className="text-emerald-800 text-lg md:text-xl whitespace-nowrap">OPERATOR:/~&gt; </label>
                                 <input
                                 id="userInput"
                                 type="text"
